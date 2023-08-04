@@ -21,5 +21,10 @@
   "homepage": "https://github.com/northcoders/be-pg-themeparks#readme",
   "devDependencies": {
     "jest": "^29.5.0"
+  },
+  "description": "",
+  "dependencies": {
+    "pg": "^8.11.2",
+    "pg-format": "^1.0.4"
   }
 }
