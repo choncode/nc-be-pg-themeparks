@@ -1,6 +1,7 @@
 const { parks, rides, stalls } = require("./data/index.js");
 const format = require("pg-format");
 const db = require("./connection");
+const { prepareRidesData } = require("../utils/utils.js");
 
 function seed() {
   return db
@@ -27,9 +28,10 @@ function seed() {
       return insertParksData(parks);
     })
     .then((parksResults) => {
-      return insertRidesData(rides, parksResults.rows)
-      
-    })
+      const preparedRides = prepareRidesData(rides, parksResults.rows);
+      const arrangeRides = arrangeRidesData(preparedRides);
+      return insertRidesData(arrangeRides);
+    });
 }
 
 function createParks() {
@@ -65,21 +67,22 @@ function insertParksData(parksData) {
   });
 }
 
-function prepareRidesData(parkData, ridesData) {
-  return ridesData.map((ride) => {
-    const park = parks.find(park => {
-      return park.park_name == ride.park_name
-    })
-    const park_id = park.park_id;
-    return [ride.ride_name, ride.year_opened, ride.votes, park_id]
-  })
+function arrangeRidesData(ridesData) {
+  const formattedRidesArr = ridesData.map((rides) => {
+    return [rides.ride_name, rides.year_opened, rides.votes, rides.park_id];
+  });
+  const ridesInsertStr = format(
+    "INSERT INTO rides(ride_name, year_opened, votes, park_id) VALUES %L RETURNING *",
+    formattedRidesArr
+  );
+  console.log(ridesInsertStr)
+  return ridesInsertStr;
 }
 
-function insertRidesData(ridesData, parksData){
-  const convertedRides = prepareRidesData(parksData, ridesData);
-  console.log(convertedRides, "  <<< this is convertedRides")
-
-
+function insertRidesData(ridesInsertStr) {
+  return db.query(ridesInsertStr).then((ridesInsertResult) => {
+    return ridesInsertResult.rows;
+  });
 }
 
-module.exports = seed;
+module.exports = { seed, prepareRidesData };
